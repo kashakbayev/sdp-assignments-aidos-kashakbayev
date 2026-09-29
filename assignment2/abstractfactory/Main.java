@@ -3,7 +3,7 @@ package assignment2.abstractfactory;
 public class Main {
 
     public static void main(String[] args) {
-        String type = "eco";
+        String type = "";
 
         ServingFactory f = getFactory(type);
 
