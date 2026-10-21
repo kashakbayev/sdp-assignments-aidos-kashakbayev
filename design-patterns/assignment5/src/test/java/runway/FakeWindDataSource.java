@@ -1,4 +1,4 @@
-import runway.*;
+package runway;
 
 
 public class FakeWindDataSource implements WindDataSource {
