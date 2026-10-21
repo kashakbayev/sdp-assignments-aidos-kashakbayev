@@ -13,6 +13,8 @@
 
     <modules>
         <module>assignment3</module>
+        <module>assignment4</module>
+        <module>assignment5</module>
     </modules>
 
 </project>
