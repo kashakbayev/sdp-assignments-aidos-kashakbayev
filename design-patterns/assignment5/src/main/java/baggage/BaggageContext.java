@@ -16,4 +16,8 @@ public class BaggageContext {
     public BaggageBelt route(Baggage baggage, List<BaggageBelt> belts) {
         return strategy.choose(baggage, belts);
     }
+
+    public String getStrategy() {
+        return strategy.toString();
+    }
 }

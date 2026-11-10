@@ -1,5 +1,6 @@
 
 import facade.AirportFacade;
+import facade.AirportFacadeAB;
 import facade.AirportAdminFacade;
 import model.PassengerRequest;
 import storage.Database;
@@ -10,7 +11,7 @@ public class Main {
         try (Database db = new Database("airport.db");
              Scanner scanner = new Scanner(System.in)) {
 
-            AirportFacade airport = new AirportFacade(db);
+            AirportFacadeAB airport = new AirportFacadeAB(db);
             AirportAdminFacade admin = new AirportAdminFacade(db);
 
             while (true) {

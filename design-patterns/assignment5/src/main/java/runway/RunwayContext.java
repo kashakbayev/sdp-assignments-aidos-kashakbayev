@@ -16,4 +16,6 @@ public class RunwayContext {
     public Runway assign(Flight flight, List<Runway> runways) {
         return strategy.choose(flight, runways);
     }
+
+    public String getStrategy() { return strategy.toString(); }
 }

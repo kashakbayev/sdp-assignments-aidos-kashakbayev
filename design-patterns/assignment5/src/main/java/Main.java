@@ -29,6 +29,7 @@ public class Main {
         runwayContext.setStrategy(new LongestRunwayStrategy());
         System.out.println("Manual runway: " + runwayContext.assign(flight, runways).getCode());
         runwayContext.setStrategy(new RunwaySelector(wind).select(9));
+        System.out.println("\n\nSTRATEGY: " + runwayContext.getStrategy() + "\n\n");
         System.out.println("Automatic runway: " + runwayContext.assign(flight, runways).getCode());
         runwayContext.setStrategy(new LeastBusyRunwayStrategy());
         System.out.println("After runway switch: " + runwayContext.assign(flight, runways).getCode());
@@ -56,8 +57,12 @@ public class Main {
         baggageContext.setStrategy(new ZoneMatchedBaggageStrategy());
         System.out.println("Manual belt: " + baggageContext.route(baggage, belts).getCode());
         baggageContext.setStrategy(new BaggageSelector().select(baggage, true));
+        System.out.println("\n\nSTRATEGY: " + baggageContext.getStrategy() + "\n\n");
         System.out.println("Automatic belt: " + baggageContext.route(baggage, belts).getCode());
         baggageContext.setStrategy(new LeastLoadedBaggageStrategy());
         System.out.println("After baggage switch: " + baggageContext.route(baggage, belts).getCode());
     }
 }
+
+/*  add a getter to the context, it returns name of curr strategy
+print it in demo after the selector shooses  */
