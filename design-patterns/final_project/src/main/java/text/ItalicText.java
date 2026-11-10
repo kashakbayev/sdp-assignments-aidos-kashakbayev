@@ -1,6 +1,6 @@
-package docforge.text;
+package text;
 
-import docforge.format.TextFormat;
+import format.TextFormat;
 
 public class ItalicText extends TextDecorator {
 
