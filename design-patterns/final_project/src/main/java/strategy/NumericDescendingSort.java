@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-/** Sorts rows by the number in one column, highest first. */
 public class NumericDescendingSort implements SortStrategy {
 
     private final String column;
@@ -28,7 +27,6 @@ public class NumericDescendingSort implements SortStrategy {
         return data.withRows(sorted);
     }
 
-    /** Cells that are not numbers count as 0, so they go to the end. */
     private double toNumber(String cell) {
         try {
             return Double.parseDouble(cell);

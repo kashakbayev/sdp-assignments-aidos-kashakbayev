@@ -2,7 +2,6 @@ package text;
 
 import format.TextFormat;
 
-/** Concrete component of the Decorator pattern: text with no formatting. */
 public class PlainText implements Text {
 
     private final String value;

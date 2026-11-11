@@ -33,16 +33,16 @@ Requires JDK 8 or newer.
 Linux / macOS:
 
 ```
-javac -d out $(find src -name "*.java")
-java -cp out docforge.Main
+javac -d out $(find src/main/java -name "*.java")
+java -cp out Main
 ```
 
 Windows (cmd):
 
 ```
-dir /s /b src\*.java > sources.txt
+dir /s /b src\main\java\*.java > sources.txt
 javac -d out @sources.txt
-java -cp out docforge.Main
+java -cp out Main
 ```
 
 Generated reports are saved to the `output` folder.
@@ -51,7 +51,8 @@ Generated reports are saved to the `output` folder.
 
 ```
 data/sales.csv        sample data
-src/docforge/
+output/               generated reports
+src/main/java/
   Main.java           console menu
   builder/            Builder
   factory/            Factory Method

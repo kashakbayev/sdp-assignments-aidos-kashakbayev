@@ -22,7 +22,6 @@ public class MarkdownExportVisitor extends ExportVisitor {
 
     @Override
     public void visit(Heading heading) {
-        // "#" is used for the document title, so section headings start at "##"
         for (int i = 0; i <= heading.getLevel(); i++) {
             out.append("#");
         }

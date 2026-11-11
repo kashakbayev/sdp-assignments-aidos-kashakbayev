@@ -6,10 +6,6 @@ import model.Paragraph;
 import model.Table;
 import text.Text;
 
-/**
- * A second, unrelated operation over the same elements: statistics.
- * It was added without touching any model class.
- */
 public class WordCountVisitor implements DocumentVisitor {
 
     private int words;

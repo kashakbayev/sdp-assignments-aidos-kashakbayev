@@ -4,7 +4,6 @@ import format.TextFormat;
 import model.Paragraph;
 import text.Text;
 
-/** Base class for visitors that turn a document into a string. */
 public abstract class ExportVisitor implements DocumentVisitor {
 
     protected final StringBuilder out = new StringBuilder();
@@ -14,7 +13,6 @@ public abstract class ExportVisitor implements DocumentVisitor {
         this.format = format;
     }
 
-    /** Joins all text parts of a paragraph, formatted for this export. */
     protected String renderParts(Paragraph paragraph) {
         StringBuilder sb = new StringBuilder();
         for (Text part : paragraph.getParts()) {

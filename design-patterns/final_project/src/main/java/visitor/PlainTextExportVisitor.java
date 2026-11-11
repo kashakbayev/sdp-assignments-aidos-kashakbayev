@@ -47,7 +47,6 @@ public class PlainTextExportVisitor extends ExportVisitor {
         out.append("\n");
     }
 
-    /** Each column is as wide as its longest cell. */
     private int[] columnWidths(Table table) {
         int[] widths = new int[table.getHeaders().size()];
         for (int i = 0; i < widths.length; i++) {

@@ -1,6 +1,5 @@
 package format;
 
-/** Plain text has no real markup, so formatting is shown with simple symbols. */
 public class PlainFormat implements TextFormat {
 
     @Override

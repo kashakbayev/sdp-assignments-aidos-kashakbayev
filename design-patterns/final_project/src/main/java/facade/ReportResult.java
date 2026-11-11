@@ -2,7 +2,6 @@ package facade;
 
 import java.nio.file.Path;
 
-/** What the client gets back after a report is generated. */
 public class ReportResult {
 
     private final Path file;

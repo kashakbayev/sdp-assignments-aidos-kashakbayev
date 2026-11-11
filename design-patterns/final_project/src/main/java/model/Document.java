@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** The finished product: an immutable document made of elements. */
 public class Document {
 
     private final String title;
@@ -31,7 +30,6 @@ public class Document {
         return elements;
     }
 
-    /** Lets the visitor see the document itself, then every element in order. */
     public void accept(DocumentVisitor visitor) {
         visitor.visit(this);
         for (DocumentElement element : elements) {

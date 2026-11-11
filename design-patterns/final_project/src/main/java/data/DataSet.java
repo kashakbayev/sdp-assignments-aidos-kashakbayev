@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Tabular data loaded from a file: column names and rows of cells. */
 public class DataSet {
 
     private final List<String> headers;
@@ -23,7 +22,6 @@ public class DataSet {
         return rows;
     }
 
-    /** Finds a column by name, ignoring case. */
     public int columnIndex(String header) {
         for (int i = 0; i < headers.size(); i++) {
             if (headers.get(i).equalsIgnoreCase(header)) {
@@ -33,7 +31,6 @@ public class DataSet {
         throw new IllegalArgumentException("Column '" + header + "' not found. Available: " + headers);
     }
 
-    /** Returns a copy of this data set with the same columns and other rows. */
     public DataSet withRows(List<List<String>> newRows) {
         return new DataSet(headers, newRows);
     }

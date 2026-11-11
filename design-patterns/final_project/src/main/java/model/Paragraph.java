@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** A paragraph is a sequence of text parts, each with its own formatting. */
 public class Paragraph implements DocumentElement {
 
     private final List<Text> parts;

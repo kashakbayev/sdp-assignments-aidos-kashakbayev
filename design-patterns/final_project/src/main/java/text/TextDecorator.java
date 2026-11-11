@@ -1,9 +1,5 @@
 package text;
 
-/**
- * Base decorator: wraps another Text and has the same interface,
- * so decorators can be stacked in any order.
- */
 public abstract class TextDecorator implements Text {
 
     protected final Text inner;

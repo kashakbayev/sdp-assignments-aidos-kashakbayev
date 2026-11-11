@@ -35,7 +35,6 @@ public class HtmlExportVisitor extends ExportVisitor {
 
     @Override
     public void visit(Heading heading) {
-        // h1 is used for the document title, so section headings start at h2
         String tag = "h" + (heading.getLevel() + 1);
         out.append("<").append(tag).append(">")
                 .append(format.escape(heading.getTitle()))

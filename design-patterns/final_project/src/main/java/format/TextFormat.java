@@ -1,6 +1,5 @@
 package format;
 
-
 public interface TextFormat {
 
     String escape(String raw);

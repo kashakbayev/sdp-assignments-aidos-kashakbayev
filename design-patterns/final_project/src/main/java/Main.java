@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Scanner;
 
-/** Console client. It talks only to the ReportService facade. */
 public class Main {
 
     private static final String AUTHOR = "Aidos";
@@ -70,7 +69,6 @@ public class Main {
         }
     }
 
-    /** The user picks the algorithm at runtime; the facade just receives a SortStrategy. */
     private static SortStrategy askSorting(List<String> columns) {
         System.out.println("Sort by: 0) Original order");
         for (int i = 0; i < columns.size(); i++) {
@@ -89,7 +87,6 @@ public class Main {
         return new AlphabeticalSort(column);
     }
 
-    /** Prints a question and returns the answer, or the default on empty input. */
     private static String ask(String question, String defaultValue) {
         System.out.print(question + " [" + defaultValue + "]: ");
         if (!in.hasNextLine()) {

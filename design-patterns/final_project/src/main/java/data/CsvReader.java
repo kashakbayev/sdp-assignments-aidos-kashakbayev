@@ -7,7 +7,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Reads a simple comma-separated file. The first line holds the column names. */
 public class CsvReader {
 
     public DataSet read(String path) throws IOException {

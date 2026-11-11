@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-/** Sorts rows by the text of one column, A to Z. */
 public class AlphabeticalSort implements SortStrategy {
 
     private final String column;

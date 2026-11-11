@@ -23,13 +23,6 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Facade: one simple entry point that hides the whole subsystem
- * (CSV reading, sorting, building, formatting, exporting, counting).
- *
- * The report treats the first column as the record name
- * and the last column as its numeric value.
- */
 public class ReportService {
 
     private final String author;
@@ -41,21 +34,20 @@ public class ReportService {
         this.outputDir = outputDir;
     }
 
-    /** Lets the client show the available columns without knowing about CsvReader. */
     public List<String> readColumns(String csvPath) throws IOException {
         return reader.read(csvPath).getHeaders();
     }
 
     public ReportResult generate(String csvPath, String title, ExportFormat format, SortStrategy sorting)
             throws IOException {
-        DataSet data = sorting.sort(reader.read(csvPath));          // Strategy
-        Document document = buildDocument(csvPath, title, data, sorting);  // Builder + Factory Method + Decorator
+        DataSet data = sorting.sort(reader.read(csvPath));
+        Document document = buildDocument(csvPath, title, data, sorting);
 
-        ExportVisitor exporter = createExporter(format);             // Visitor
+        ExportVisitor exporter = createExporter(format);
         document.accept(exporter);
         Path file = save(title, format, exporter.getResult());
 
-        WordCountVisitor counter = new WordCountVisitor();           // Visitor (second operation)
+        WordCountVisitor counter = new WordCountVisitor();
         document.accept(counter);
 
         return new ReportResult(file, data.getRows().size(), counter.getWords());

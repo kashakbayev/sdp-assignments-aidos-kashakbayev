@@ -13,10 +13,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Builder pattern: assembles a Document step by step with a fluent interface.
- * Elements are produced by ElementCreator subclasses (Factory Method).
- */
 public class DocumentBuilder {
 
     private String title = "Untitled";
@@ -49,7 +45,6 @@ public class DocumentBuilder {
         return add(new TableCreator(headers, rows));
     }
 
-    /** Accepts any creator, so new element types need no change in the builder. */
     public DocumentBuilder add(ElementCreator creator) {
         elements.add(creator.create());
         return this;
