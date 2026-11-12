@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DocForge</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        max-width: 900px;
+        margin: 30px auto;
+        padding: 0 16px;
+        color: #222;
+        background: #fff;
+    }
+    h1 {
+        margin-bottom: 4px;
+    }
+    .subtitle {
+        color: #666;
+        margin-top: 0;
+    }
+    fieldset {
+        border: 1px solid #ccc;
+        padding: 12px 16px;
+        margin-bottom: 16px;
+    }
+    label {
+        display: block;
+        margin: 8px 0 4px;
+        font-weight: bold;
+    }
+    input[type=text], select {
+        width: 100%;
+        max-width: 320px;
+        padding: 5px;
+        box-sizing: border-box;
+    }
+    button {
+        padding: 7px 16px;
+        margin-right: 8px;
+        cursor: pointer;
+    }
+    #error {
+        color: #b00020;
+    }
+    #stats {
+        color: #444;
+    }
+    iframe, pre {
+        width: 100%;
+        min-height: 420px;
+        border: 1px solid #ccc;
+        box-sizing: border-box;
+    }
+    pre {
+        padding: 12px;
+        overflow: auto;
+        background: #f7f7f7;
+        white-space: pre;
+    }
+    .hidden {
+        display: none;
+    }
+</style>
+</head>
+<body>
+
+<h1>DocForge</h1>
+<p class="subtitle">Report generator: CSV in, HTML / Markdown / plain text out.</p>
+
+<fieldset>
+    <legend>Data</legend>
+    <label for="file">CSV file</label>
+    <input type="file" id="file" accept=".csv,text/csv">
+    <p id="fileInfo"></p>
+</fieldset>
+
+<fieldset>
+    <legend>Report</legend>
+    <label for="title">Report title</label>
+    <input type="text" id="title" value="Sales Report">
+
+    <label for="format">Format</label>
+    <select id="format">
+        <option value="html">HTML</option>
+        <option value="md">Markdown</option>
+        <option value="txt">Plain text</option>
+    </select>
+
+    <label for="column">Sort by</label>
+    <select id="column">
+        <option value="">Original order</option>
+    </select>
+
+    <label for="order">Order</label>
+    <select id="order" disabled>
+        <option value="alpha">A to Z (text)</option>
+        <option value="numeric">High to low (numbers)</option>
+    </select>
+</fieldset>
+
+<button id="generate" disabled>Generate report</button>
+<button id="download" disabled>Download</button>
+
+<p id="error"></p>
+<p id="stats"></p>
+
+<iframe id="htmlPreview" class="hidden" title="Report preview"></iframe>
+<pre id="textPreview" class="hidden"></pre>
+
+<script>
+    const AUTHOR = "Aidos";
+
+    let data = null;
+    let fileName = "";
+    let lastReport = null;
+
+    const $ = id => document.getElementById(id);
+
+    function parseCsv(content, path) {
+        const lines = content.split(/\r?\n/);
+        let headers = null;
+        const rows = [];
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line === "") {
+                continue;
+            }
+            const cells = line.split(",").map(c => c.trim());
+            if (headers === null) {
+                headers = cells;
+            } else if (cells.length !== headers.length) {
+                throw new Error("Line " + (i + 1) + " of " + path + " has " + cells.length
+                    + " values, expected " + headers.length);
+            } else {
+                rows.push(cells);
+            }
+        }
+        if (headers === null) {
+            throw new Error("File " + path + " is empty");
+        }
+        return { headers, rows };
+    }
+
+    function toNumber(cell) {
+        if (cell.trim() === "") {
+            return 0;
+        }
+        const n = Number(cell);
+        return isNaN(n) ? 0 : n;
+    }
+
+    function money(value) {
+        return value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function sortRows(set, column, order) {
+        if (!column) {
+            return { rows: set.rows, description: "in original order" };
+        }
+        const index = set.headers.findIndex(h => h.toLowerCase() === column.toLowerCase());
+        const rows = set.rows.slice();
+        if (order === "numeric") {
+            rows.sort((a, b) => toNumber(b[index]) - toNumber(a[index]));
+            return { rows, description: "sorted by " + column + " (high to low)" };
+        }
+        rows.sort((a, b) => {
+            const x = a[index].toLowerCase();
+            const y = b[index].toLowerCase();
+            return x < y ? -1 : x > y ? 1 : 0;
+        });
+        return { rows, description: "sorted by " + column + " (A to Z)" };
+    }
+
+    const plain = s => ({ type: "plain", text: s });
+    const bold = t => ({ type: "bold", inner: t });
+    const italic = t => ({ type: "italic", inner: t });
+    const highlight = t => ({ type: "highlight", inner: t });
+
+    function buildDocument(title, headers, rows, description) {
+        const valueColumn = headers.length - 1;
+        const valueHeader = headers[valueColumn];
+        const elements = [
+            { kind: "heading", level: 1, title: "Overview" },
+            { kind: "paragraph", parts: [
+                plain("This report was generated from "),
+                italic(plain(fileName)),
+                plain(". It contains "),
+                bold(plain(rows.length + " records")),
+                plain(", " + description + ".")
+            ] },
+            { kind: "heading", level: 1, title: "Data" },
+            { kind: "table", headers, rows },
+            { kind: "heading", level: 1, title: "Summary" }
+        ];
+
+        if (rows.length === 0) {
+            elements.push({ kind: "paragraph", parts: [plain("The data file has no records.")] });
+        } else {
+            let total = 0;
+            let top = rows[0];
+            for (const row of rows) {
+                total += toNumber(row[valueColumn]);
+                if (toNumber(row[valueColumn]) > toNumber(top[valueColumn])) {
+                    top = row;
+                }
+            }
+            elements.push({ kind: "paragraph", parts: [
+                plain("Total " + valueHeader + ": "),
+                bold(plain(money(total))),
+                plain(".")
+            ] });
+            elements.push({ kind: "paragraph", parts: [
+                plain("Top record: "),
+                highlight(bold(plain(top[0]))),
+                plain(" with " + valueHeader + " of " + money(toNumber(top[valueColumn])) + ".")
+            ] });
+        }
+        return { title, author: AUTHOR, elements };
+    }
+
+    const formats = {
+        html: {
+            escape: s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"),
+            bold: s => "<b>" + s + "</b>",
+            italic: s => "<i>" + s + "</i>",
+            highlight: s => "<mark>" + s + "</mark>"
+        },
+        md: {
+            escape: s => s.replace(/\*/g, "\\*").replace(/_/g, "\\_").replace(/\|/g, "\\|"),
+            bold: s => "**" + s + "**",
+            italic: s => "*" + s + "*",
+            highlight: s => "<mark>" + s + "</mark>"
+        },
+        txt: {
+            escape: s => s,
+            bold: s => "*" + s + "*",
+            italic: s => "_" + s + "_",
+            highlight: s => "[" + s + "]"
+        }
+    };
+
+    function render(part, f) {
+        if (part.type === "plain") {
+            return f.escape(part.text);
+        }
+        return f[part.type](render(part.inner, f));
+    }
+
+    function plainText(part) {
+        return part.type === "plain" ? part.text : plainText(part.inner);
+    }
+
+    function renderParts(paragraph, f) {
+        return paragraph.parts.map(p => render(p, f)).join("");
+    }
+
+    const HTML_STYLE =
+        "body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; color: #222; }\n"
+        + "table { border-collapse: collapse; margin: 16px 0; }\n"
+        + "th, td { border: 1px solid #bbb; padding: 6px 14px; text-align: left; }\n"
+        + "th { background: #eee; }\n"
+        + "mark { background: #fff3a0; }\n"
+        + ".author { color: #666; }\n";
+
+    function exportHtml(doc) {
+        const f = formats.html;
+        const title = f.escape(doc.title);
+        let out = "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\">\n";
+        out += "<title>" + title + "</title>\n";
+        out += "<style>\n" + HTML_STYLE + "</style>\n</head>\n<body>\n";
+        out += "<h1>" + title + "</h1>\n";
+        out += "<p class=\"author\">Author: " + f.escape(doc.author) + "</p>\n";
+
+        const row = (cells, tag) => "<tr>"
+            + cells.map(c => "<" + tag + ">" + f.escape(c) + "</" + tag + ">").join("")
+            + "</tr>\n";
+
+        for (const el of doc.elements) {
+            if (el.kind === "heading") {
+                const tag = "h" + (el.level + 1);
+                out += "<" + tag + ">" + f.escape(el.title) + "</" + tag + ">\n";
+            } else if (el.kind === "paragraph") {
+                out += "<p>" + renderParts(el, f) + "</p>\n";
+            } else {
+                out += "<table>\n" + row(el.headers, "th");
+                for (const r of el.rows) {
+                    out += row(r, "td");
+                }
+                out += "</table>\n";
+            }
+        }
+        return out + "</body>\n</html>\n";
+    }
+
+    function exportMarkdown(doc) {
+        const f = formats.md;
+        let out = "# " + f.escape(doc.title) + "\n\n";
+        out += f.italic("Author: " + f.escape(doc.author)) + "\n\n";
+
+        const row = cells => "|" + cells.map(c => " " + f.escape(c) + " |").join("") + "\n";
+
+        for (const el of doc.elements) {
+            if (el.kind === "heading") {
+                out += "#".repeat(el.level + 1) + " " + f.escape(el.title) + "\n\n";
+            } else if (el.kind === "paragraph") {
+                out += renderParts(el, f) + "\n\n";
+            } else {
+                out += row(el.headers);
+                out += "|" + " --- |".repeat(el.headers.length) + "\n";
+                for (const r of el.rows) {
+                    out += row(r);
+                }
+                out += "\n";
+            }
+        }
+        return out;
+    }
+
+    function exportText(doc) {
+        const f = formats.txt;
+        const title = doc.title.toUpperCase();
+        let out = title + "\n" + "=".repeat(title.length) + "\n";
+        out += "Author: " + doc.author + "\n\n";
+
+        for (const el of doc.elements) {
+            if (el.kind === "heading") {
+                out += el.title + "\n" + "-".repeat(el.title.length) + "\n";
+            } else if (el.kind === "paragraph") {
+                out += renderParts(el, f) + "\n\n";
+            } else {
+                const widths = el.headers.map(h => h.length);
+                for (const r of el.rows) {
+                    r.forEach((c, i) => widths[i] = Math.max(widths[i], c.length));
+                }
+                const row = cells => cells
+                    .map((c, i) => c + " ".repeat(widths[i] - c.length))
+                    .join(" | ") + "\n";
+                out += row(el.headers);
+                out += widths.map(w => "-".repeat(w)).join("-+-") + "\n";
+                for (const r of el.rows) {
+                    out += row(r);
+                }
+                out += "\n";
+            }
+        }
+        return out;
+    }
+
+    function countWords(text) {
+        const t = text.trim();
+        return t === "" ? 0 : t.split(/\s+/).length;
+    }
+
+    function wordCount(doc) {
+        let words = countWords(doc.title);
+        for (const el of doc.elements) {
+            if (el.kind === "heading") {
+                words += countWords(el.title);
+            } else if (el.kind === "paragraph") {
+                words += countWords(el.parts.map(plainText).join(""));
+            }
+        }
+        return words;
+    }
+
+    function slug(title) {
+        const name = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+        return name === "" ? "report" : name;
+    }
+
+    function fillColumns() {
+        const select = $("column");
+        select.innerHTML = "<option value=\"\">Original order</option>";
+        for (const h of data.headers) {
+            const option = document.createElement("option");
+            option.value = h;
+            option.textContent = h;
+            select.appendChild(option);
+        }
+        $("order").disabled = true;
+    }
+
+    $("file").addEventListener("change", e => {
+        const file = e.target.files[0];
+        $("error").textContent = "";
+        $("stats").textContent = "";
+        data = null;
+        $("generate").disabled = true;
+        $("download").disabled = true;
+        if (!file) {
+            return;
+        }
+        file.text().then(content => {
+            try {
+                fileName = file.name;
+                data = parseCsv(content, file.name);
+                fillColumns();
+                $("fileInfo").textContent = data.rows.length + " rows, columns: " + data.headers.join(", ");
+                $("generate").disabled = false;
+            } catch (err) {
+                $("fileInfo").textContent = "";
+                $("error").textContent = "Error: " + err.message;
+            }
+        });
+    });
+
+    $("column").addEventListener("change", () => {
+        $("order").disabled = $("column").value === "";
+    });
+
+    $("generate").addEventListener("click", () => {
+        $("error").textContent = "";
+        const title = $("title").value.trim() || "Sales Report";
+        const format = $("format").value;
+        const sorted = sortRows(data, $("column").value, $("order").value);
+        const doc = buildDocument(title, data.headers, sorted.rows, sorted.description);
+
+        let content;
+        if (format === "html") {
+            content = exportHtml(doc);
+        } else if (format === "md") {
+            content = exportMarkdown(doc);
+        } else {
+            content = exportText(doc);
+        }
+
+        lastReport = { content, format, name: slug(title) + "." + format };
+        $("stats").textContent = "Records: " + sorted.rows.length + ", words: " + wordCount(doc);
+
+        if (format === "html") {
+            $("htmlPreview").srcdoc = content;
+            $("htmlPreview").classList.remove("hidden");
+            $("textPreview").classList.add("hidden");
+        } else {
+            $("textPreview").textContent = content;
+            $("textPreview").classList.remove("hidden");
+            $("htmlPreview").classList.add("hidden");
+        }
+        $("download").disabled = false;
+    });
+
+    $("download").addEventListener("click", () => {
+        if (!lastReport) {
+            return;
+        }
+        const types = { html: "text/html", md: "text/markdown", txt: "text/plain" };
+        const blob = new Blob([lastReport.content], { type: types[lastReport.format] + ";charset=utf-8" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = lastReport.name;
+        link.click();
+        URL.revokeObjectURL(link.href);
+    });
+</script>
+</body>
+</html>

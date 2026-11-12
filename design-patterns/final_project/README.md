@@ -47,11 +47,18 @@ java -cp out Main
 
 Generated reports are saved to the `output` folder.
 
+## Web version
+
+Open `web/index.html` in a browser. Choose a CSV file, set the title, format and
+sorting, then press "Generate report" to see a preview and "Download" to save it.
+The page works offline and does not need the Java part to be running.
+
 ## Project structure
 
 ```
 data/sales.csv        sample data
 output/               generated reports
+web/index.html        browser version
 src/main/java/
   Main.java           console menu
   builder/            Builder
